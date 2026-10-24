@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Network Traffic Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef2f8;--panel:#fff;--panel2:#f4f7fb;--line:#d6deea;--text:#14213d;--muted:#5a6b84;--cyan:#0b8fb5;--blue:#2563eb;--purple:#7c3aed;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--glow:0 0 0 1px var(--cyan),0 8px 24px rgba(11,143,181,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1020;--panel:#070b14;--panel2:#0d1527;--line:#1c2a44;--text:#e6edf7;--muted:#8fa0ba;--cyan:#22d3ee;--blue:#3b82f6;--purple:#8b5cf6;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--glow:0 0 0 1px var(--cyan),0 8px 28px rgba(34,211,238,.18)}}
+:root[data-theme="dark"]{--bg:#0a1020;--panel:#070b14;--panel2:#0d1527;--line:#1c2a44;--text:#e6edf7;--muted:#8fa0ba;--cyan:#22d3ee;--blue:#3b82f6;--purple:#8b5cf6;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--glow:0 0 0 1px var(--cyan),0 8px 28px rgba(34,211,238,.18)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}*,*::before,*::after{box-sizing:border-box}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--panel);z-index:50}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:6px}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:16px 10px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto}
+.brand{font-weight:700;padding:4px 10px 14px}
+aside a{display:block;padding:9px 12px;margin:2px 0;border-radius:10px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:.2s}
+aside a.on{color:var(--text);border-color:var(--line);background:var(--panel2)}
+main{padding:22px;min-width:0;max-width:1300px}
+h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.05rem;margin:0 0 10px}.muted{color:var(--muted)}.sm{font-size:.84rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;transition:.2s}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.stats{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:14px 0}
+.stat b{display:block;font-size:1.5rem}.stat span{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.box{position:relative;height:250px}.wide{grid-column:1/-1}
+button,.btn{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#02121c;border:0;border-radius:10px;padding:9px 16px;font:600 .9rem inherit;cursor:pointer;transition:.2s;text-decoration:none;display:inline-block}
+button.alt{background:transparent;color:var(--text);border:1px solid var(--line)}button.sm{padding:4px 9px;font-size:.78rem}
+input,select,textarea{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font:inherit;max-width:100%}
+textarea{width:100%;height:220px;font:12px/1.4 ui-monospace,Consolas,monospace}
+label{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--muted)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{background:var(--panel2);color:var(--muted);cursor:pointer}tr.k{cursor:pointer}
+.bd{border-radius:99px;padding:2px 10px;font-size:.72rem;font-weight:700;border:1px solid}
+.High{color:var(--bad);border-color:var(--bad)}.Medium{color:var(--warn);border-color:var(--warn)}.Low{color:var(--blue);border-color:var(--blue)}.Info{color:var(--muted);border-color:var(--muted)}
+.ban{border:1px solid var(--warn);color:var(--warn);border-radius:12px;padding:9px 13px;margin:10px 0}.err{border-color:var(--bad);color:var(--bad)}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:38px;text-align:center;cursor:pointer;transition:.2s}.drop.d{border-color:var(--cyan)}
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;padding:46px 28px;background:var(--panel)}.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.6}.hero div{position:relative;max-width:620px}
+.hero h1{font-size:clamp(1.7rem,4vw,2.6rem)}.pg{display:none}.pg.on{display:block}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;max-width:min(560px,94vw);width:100%}
+.menu{display:none}
+@media (hover:hover){aside a:hover{color:var(--text);background:var(--panel2)}.card.h:hover{transform:translateY(-3px);box-shadow:var(--glow)}button:hover,.btn:hover{transform:translateY(-2px);filter:brightness(1.1)}tbody tr:hover{background:var(--panel2)}.drop:hover{border-color:var(--cyan)}}
+@media (max-width:820px){.app{grid-template-columns:1fr}aside{position:static;height:auto;display:flex;flex-wrap:wrap;gap:4px;border-right:0;border-bottom:1px solid var(--line)}.brand{width:100%}main{padding:14px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside id="nav"><div class="brand">🛡️ Traffic Analyzer</div></aside>
+<main>
+<div id="info" class="ban" style="display:none"></div>
+
+<section class="pg" id="home"><div class="hero"><canvas id="cv"></canvas><div>
+<span class="bd Low">Computer Networks project</span><h1>Smart Network Traffic Analyzer with Anomaly Detection</h1>
+<p class="muted">Upload a packet capture or load sample traffic, see protocols and statistics, and get explainable alerts when something looks unusual.</p>
+<a class="btn" href="#dashboard">Open Dashboard</a> <a class="btn alt" style="background:none;color:var(--text);border:1px solid var(--line)" href="#upload">Upload PCAP</a></div></div>
+<div class="grid" style="margin-top:14px">
+<div class="card h"><h2>📊 Traffic analysis</h2><p class="muted sm">Packets, bytes, rates over time, top talkers and packet sizes.</p></div>
+<div class="card h"><h2>🔍 Protocol detection</h2><p class="muted sm">TCP, UDP, DNS and ICMP counted once per packet.</p></div>
+<div class="card h"><h2>🚨 Anomaly detection</h2><p class="muted sm">Rate spikes, port scans, SYN bursts and DNS abuse with explanations.</p></div>
+<div class="card h"><h2>📤 Reporting</h2><p class="muted sm">Copy a JSON summary or CSV of the packets.</p></div></div>
+<h2 style="margin-top:20px">How it works</h2><p class="muted sm">Capture file → parse headers → pandas-style statistics → detection rules → dashboard. The full Python version (Flask, Scapy, SQLite, PDF reports, live capture) is the downloadable project; this site runs entirely in your browser.</p></section>
+
+<section class="pg" id="dashboard"><h1>Dashboard</h1><p class="muted sm" id="meta"></p><div id="empty" class="card" style="text-align:center;margin-top:12px"><h2>No analysis yet</h2><p class="muted">Upload a .pcap file or create a clearly labelled sample.</p><a class="btn" href="#upload">Upload PCAP</a> <button class="alt" data-sample>Create sample analysis</button></div>
+<div id="data"><div class="stats" id="stats"></div><div class="grid">
+<div class="card wide"><h2>Traffic over time (packets/s)</h2><div class="box"><canvas id="c1"></canvas></div></div>
+<div class="card h"><h2>Protocol distribution</h2><div class="box"><canvas id="c2"></canvas></div></div>
+<div class="card h"><h2>Packet size distribution</h2><div class="box"><canvas id="c3"></canvas></div></div>
+<div class="card h"><h2>Top source IPs</h2><div class="box"><canvas id="c4"></canvas></div></div>
+<div class="card h"><h2>Top destination IPs</h2><div class="box"><canvas id="c5"></canvas></div></div>
+<div class="card wide"><h2>Recent alerts</h2><div id="ra"></div></div></div></div></section>
+
+<section class="pg" id="upload"><h1>Upload PCAP</h1><p class="muted sm">Classic .pcap files (Ethernet, IPv4, TCP/UDP/ICMP, DNS), up to 20 MB and 100,000 packets. Parsed locally; nothing is uploaded anywhere. For PCAPNG and live capture use the Python project.</p>
+<div class="drop" id="drop" tabindex="0" role="button"><h2>Drag &amp; drop a .pcap file</h2><span class="muted">or click to choose</span><input type="file" id="file" accept=".pcap,.cap" hidden></div>
+<div id="uerr"></div><p><button class="alt" data-sample>Create sample analysis instead</button></p></section>
+
+<section class="pg" id="packets"><h1>Packet Explorer</h1><div class="row"><label>IP / DNS name<input id="q" placeholder="192.168.1.10"></label>
+<label>Protocol<select id="pf"><option value="">All</option></select></label><label>Min length<input id="ml" type="number" min="0" style="width:90px"></label></div>
+<div class="tw"><table><thead><tr id="ph"></tr></thead><tbody id="pb"></tbody></table></div>
+<div class="row"><button class="alt sm" id="pp">Previous</button><span class="sm muted" id="pi"></span><button class="alt sm" id="pn">Next</button></div></section>
+
+<section class="pg" id="protocols"><h1>Protocol Analysis</h1><p class="muted sm">Each packet gets one label (ICMP &gt; DNS &gt; TCP &gt; UDP &gt; Other), so totals never double count. TLS payloads are encrypted; this view reads headers only and does not claim to see HTTP content.</p>
+<div id="pt" class="card"></div></section>
+
+<section class="pg" id="alerts"><h1>Alerts Center</h1><p class="muted sm">Statistical anomalies, not confirmed attacks.</p>
+<div class="row"><label>Search<input id="aq"></label><label>Severity<select id="as"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option><option>Info</option></select></label><span id="ac" class="sm muted"></span></div>
+<div class="tw"><table><thead><tr><th>ID</th><th>Severity</th><th>Category</th><th>Source → Destination</th><th>Observed</th><th>Status</th></tr></thead><tbody id="ab"></tbody></table></div></section>
+
+<section class="pg" id="reports"><h1>Reports</h1><p class="muted sm">Generated from the current analysis. Copy and paste into a file.</p>
+<div class="row"><button id="rj">Copy JSON summary</button><button class="alt" id="rc">Copy CSV packets</button></div><textarea id="rt" readonly aria-label="Report preview"></textarea></section>
+
+<section class="pg" id="settings"><h1>Settings</h1><p class="muted sm">Thresholds apply the next time you analyse a capture.</p><div class="card"><div class="row" id="sf"></div><button id="sa">Re-run analysis with these settings</button> <button class="alt" id="th">Toggle theme</button></div></section>
+
+<section class="pg" id="about"><h1>About</h1><div class="grid"><div class="card"><h2>Detection rules</h2><p class="muted sm">Packet rate (median + MAD), distinct ports per source and target in 10 s, SYN-only bursts, DNS rate and unusually long DNS names. Thresholds are configurable.</p></div>
+<div class="card"><h2>Limitations</h2><p class="muted sm">Alerts are statistical flags, not verified incidents. Short captures give weak baselines, and legitimate scanners or backups can trigger alerts.</p></div>
+<div class="card"><h2>Privacy</h2><p class="muted sm">Files stay in your browser and are not stored or sent. Only headers are read, never payloads.</p></div></div></section>
+</main></div>
+<dialog id="dg"><div id="db"></div><p style="text-align:right"><button class="alt" id="dx">Close</button></p></dialog>
+
+<script>
+var PAGES=[["home","Home"],["dashboard","Dashboard"],["upload","Upload PCAP"],["packets","Packets"],["protocols","Protocols"],["alerts","Alerts"],["reports","Reports"],["settings","Settings"],["about","About"]];
+var S={scan:15,syn:300,sigma:4,dnslen:50,dnsrate:100},P=[],A=[],src="",sample=false,ch={},sortK="t",sortD=1,page=0;
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+$("nav").insertAdjacentHTML("beforeend",PAGES.map(function(p){return '<a href="#'+p[0]+'" data-p="'+p[0]+'">'+p[1]+'</a>'}).join(""));
+function route(){var h=(location.hash||"#home").slice(1);if(!$(h))h="home";document.querySelectorAll(".pg").forEach(function(e){e.classList.toggle("on",e.id==h)});
+document.querySelectorAll("#nav a").forEach(function(a){a.classList.toggle("on",a.dataset.p==h)});if(h=="dashboard")dash();if(h=="packets")pk();if(h=="protocols")proto();if(h=="alerts")al();if(h=="reports")rep();if(h=="settings")sett()}
+addEventListener("hashchange",route);
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function mk(id,cfg){if(ch[id])ch[id].destroy();Chart.defaults.color=css("--muted");Chart.defaults.borderColor=css("--line");cfg.options=Object.assign({responsive:true,maintainAspectRatio:false},cfg.options);ch[id]=new Chart($(id),cfg)}
+
+/* ---------- sample data (synthetic, seeded) ---------- */
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gen(){var r=rng(42),o=[],C=["192.168.1.10","192.168.1.11","192.168.1.12","192.168.1.33"];function ri(a,b){return a+Math.floor(r()*(b-a+1))}
+function add(t,s,d,p,sp,dp,l,f,q){o.push({t:t,src:s,dst:d,proto:p,sport:sp,dport:dp,len:l,flags:f,q:q})}
+for(var s=0;s<60;s++)for(var k=0,n=ri(5,12);k<n;k++){var t=s+r(),c=C[ri(0,3)],x=r()*100,sp=ri(40000,60000);
+if(x<55)add(t,c,"142.250.77.14","TCP",sp,443,ri(70,1400),0x18);else if(x<65)add(t,c,"93.184.216.34","TCP",sp,80,ri(90,900),0x18);
+else if(x<88)add(t,c,"192.168.1.1","DNS",sp,53,90,0,["example.com","python.org","github.com"][ri(0,2)]);else if(x<95)add(t,c,"192.168.1.1","UDP",sp,123,90);else add(t,c,"8.8.8.8","ICMP",null,null,84)}
+for(var p=1;p<=120;p++)add(20+p*.02,"192.168.1.66","192.168.1.20","TCP",44444,p,60,2);
+for(var i=0;i<600;i++)add(40+i*.007,"203.0.113.50","192.168.1.10","TCP",ri(1024,65000),80,60,2);
+for(var j=0;j<12;j++){var l="";for(var m=0;m<55;m++)l+="abcdefghijklmnopqrstuvwxyz0123456789"[ri(0,35)];add(50+j*.4,"192.168.1.33","192.168.1.1","DNS",ri(40000,60000),53,140,0,l+".tunnel-test.example")}
+return o.sort(function(a,b){return a.t-b.t})}
+
+/* ---------- classic pcap parser (headers only) ---------- */
+function parsePcap(buf){var v=new DataView(buf);if(buf.byteLength<24)throw"The file is too small to be a capture.";var m=v.getUint32(0),le;
+if(m==0xd4c3b2a1)le=true;else if(m==0xa1b2c3d4)le=false;else if(m==0x0a0d0d0a)throw"PCAPNG is not supported in the browser. Use classic .pcap, or the Python project.";else throw"Not a PCAP file (bad signature).";
+if(v.getUint32(20,le)!=1)throw"Only Ethernet captures are supported here.";var o=24,out=[],t0=null;
+while(o+16<=buf.byteLength&&out.length<100000){var sec=v.getUint32(o,le),us=v.getUint32(o+4,le),cl=v.getUint32(o+8,le),ol=v.getUint32(o+12,le);o+=16;if(o+cl>buf.byteLength)break;
+var q=packet(v,o,cl,sec+us/1e6,ol);if(q)out.push(q);o+=cl}
+if(!out.length)throw"No readable IPv4 packets were found.";return out}
+function ip4(v,i){return v.getUint8(i)+"."+v.getUint8(i+1)+"."+v.getUint8(i+2)+"."+v.getUint8(i+3)}
+function packet(v,o,cl,t,ol){if(cl<34||v.getUint16(o+12)!=0x0800)return null;var ih=(v.getUint8(o+14)&15)*4,pr=v.getUint8(o+23),b=o+14+ih,q={t:t,src:ip4(v,o+26),dst:ip4(v,o+30),proto:"Other",sport:null,dport:null,len:ol,flags:null,q:null};
+if(pr==6&&cl>=14+ih+14){q.proto="TCP";q.sport=v.getUint16(b);q.dport=v.getUint16(b+2);q.flags=v.getUint8(b+13)}
+else if(pr==17&&cl>=14+ih+8){q.proto="UDP";q.sport=v.getUint16(b);q.dport=v.getUint16(b+2);if(q.dport==53||q.sport==53){q.proto="DNS";var d=b+8;if(d+12<=o+cl&&(v.getUint8(d+2)&0x80)==0){var n=d+12,nm=[];while(n<o+cl){var L=v.getUint8(n);if(!L||L>63)break;var s="";for(var k=1;k<=L&&n+k<o+cl;k++)s+=String.fromCharCode(v.getUint8(n+k));nm.push(s);n+=L+1}q.q=nm.join(".")}}}
+else if(pr==1)q.proto="ICMP";return q}
+
+/* ---------- analysis + detection ---------- */
+function med(a){var b=a.slice().sort(function(x,y){return x-y}),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2}
+function detect(){A=[];var t0=P[0].t,dur=P[P.length-1].t-t0,n=Math.floor(dur)+1,per=new Array(n).fill(0),id=0;
+function add(sev,cat,s,d,obs,base,ex,rec){A.push({id:"A"+(++id).toString().padStart(3,"0"),sev:sev,cat:cat,src:s,dst:d,obs:obs,base:base,ex:ex,rec:rec,rev:false})}
+var sc={},syn={},dr={},dl={};
+P.forEach(function(p){per[Math.min(n-1,Math.floor(p.t-t0))]++;var w=Math.floor((p.t-t0)/10);
+if(p.dport!=null&&(p.proto=="TCP"||p.proto=="UDP")){var k=p.src+"|"+p.dst+"|"+w;(sc[k]=sc[k]||{})[p.dport]=1}
+if(p.proto=="TCP"&&(p.flags&0x12)==2){var k2=p.dst+"|"+w;syn[k2]=syn[k2]||{n:0,s:{},p:{}};syn[k2].n++;syn[k2].s[p.src]=1;syn[k2].p[p.dport]=1}
+if(p.q){var k3=p.src+"|"+w;dr[k3]=(dr[k3]||0)+1;if(p.q.length>=S.dnslen)dl[p.src]=(dl[p.src]||0)+1}});
+if(dur>=20){var m=med(per),mad=med(per.map(function(x){return Math.abs(x-m)})),sc2=Math.max(mad>0?1.4826*mad:1,1),th=Math.max(m+S.sigma*sc2,30),run=null;
+per.forEach(function(v,i){if(v>=th){if(!run)run={a:i,pk:v};run.pk=Math.max(run.pk,v)}else if(run){push(run,i);run=null}});if(run)push(run,n);
+function push(r,e){add(r.pk/th>=5?"High":r.pk/th>=2?"Medium":"Low","High packet rate","network","-",r.pk+" packets/s","median "+m+"; threshold "+Math.round(th)+" pkts/s","Packet rate reached "+r.pk+"/s (typical "+m+"/s) around t="+r.a+"s.","Open Packets and check which host dominates that second.")}}
+else add("Info","Limited visibility","-","-",dur.toFixed(1)+" s capture","needs 20 s","Too short for a reliable rate baseline; rate rules were skipped.","Capture for longer.");
+Object.keys(sc).forEach(function(k){var c=Object.keys(sc[k]).length,a=k.split("|");if(c>=S.scan)add(c>=S.scan*5?"High":"Medium","Unusual port activity",a[0],a[1],c+" distinct ports in 10 s","limit "+S.scan,a[0]+" contacted "+c+" ports on "+a[1]+". Resembles port probing but may be an authorised scanner.","Confirm whether the source is a known scanner.")});
+Object.keys(syn).forEach(function(k){var o=syn[k],a=k.split("|"),np=Object.keys(o.p).length;if(o.n>=S.syn&&np<=3)add("High","Repeated connections / SYN burst",Object.keys(o.s)[0],a[0],o.n+" SYN-only packets in 10 s","limit "+S.syn,o.n+" connection attempts hit "+a[0]+" on "+np+" port(s) with no handshake completion observed.","Check the target and consider rate limiting.")});
+Object.keys(dr).forEach(function(k){if(dr[k]>=S.dnsrate)add("Medium","High DNS request rate",k.split("|")[0],"-",dr[k]+" queries in 10 s","limit "+S.dnsrate,"Unusually many DNS lookups from one host.","Inspect the queried names.")});
+Object.keys(dl).forEach(function(s){if(dl[s]>=5)add("High","Unusually long DNS names",s,"-",dl[s]+" names of "+S.dnslen+"+ chars","at least 5 names","Long random-looking names can indicate DNS tunnelling (CDNs also use long names).","Inspect the domain and its labels.")});
+var o={High:0,Medium:1,Low:2,Info:3};A.sort(function(a,b){return o[a.sev]-o[b.sev]})}
+function stats(){var by=0,pr={},sr={},ds={},sz=[0,0,0,0,0,0],t0=P[0].t,n=Math.floor(P[P.length-1].t-t0)+1,tl=new Array(n).fill(0),tcp=0,udp=0,dns=0;
+P.forEach(function(p){by+=p.len;pr[p.proto]=(pr[p.proto]||0)+1;sr[p.src]=(sr[p.src]||0)+1;ds[p.dst]=(ds[p.dst]||0)+1;tl[Math.min(n-1,Math.floor(p.t-t0))]++;
+sz[p.len<64?0:p.len<128?1:p.len<256?2:p.len<512?3:p.len<1024?4:5]++;if(p.proto=="TCP")tcp++;if(p.proto=="UDP"||p.proto=="DNS")udp++;if(p.proto=="DNS")dns++});
+function top(o){return Object.keys(o).sort(function(a,b){return o[b]-o[a]}).slice(0,8).map(function(k){return[k,o[k]]})}
+return{by:by,pr:pr,sr:top(sr),ds:top(ds),sz:sz,tl:tl,tcp:tcp,udp:udp,dns:dns,us:Object.keys(sr).length,ud:Object.keys(ds).length}}
+var ST=null;
+function load(rows,name,smp){P=rows;src=name;sample=smp;ST=stats();detect();info();location.hash="#dashboard";route()}
+function info(){var e=$("info");e.style.display=sample?"block":"none";e.textContent=sample?"Sample data: synthetic traffic generated in your browser. It is not real network traffic.":""}
+
+/* ---------- pages ---------- */
+function dash(){var has=P.length>0;$("empty").style.display=has?"none":"block";$("data").style.display=has?"block":"none";$("meta").textContent=has?src+" · analysed "+new Date().toLocaleString():"";if(!has)return;
+var s=ST,hi=A.filter(function(a){return a.sev!="Info"}).length;
+$("stats").innerHTML=[["Total packets",P.length],["Total bytes",s.by.toLocaleString()],["Unique sources",s.us],["Unique destinations",s.ud],["TCP packets",s.tcp],["UDP packets (incl. DNS)",s.udp],["DNS packets",s.dns],["Anomalies",A.length]].map(function(x){return'<div class="card stat h"><span>'+x[0]+"</span><b>"+x[1]+"</b></div>"}).join("");
+var pal=["#22d3ee","#3b82f6","#8b5cf6","#22c55e","#f59e0b","#ef4444"];
+mk("c1",{type:"line",data:{labels:s.tl.map(function(_,i){return i+"s"}),datasets:[{data:s.tl,borderColor:pal[0],backgroundColor:"#22d3ee22",fill:true,tension:.3,pointRadius:0}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:12}},y:{beginAtZero:true}}}});
+var pk=Object.keys(s.pr);mk("c2",{type:"doughnut",data:{labels:pk,datasets:[{data:pk.map(function(k){return s.pr[k]}),backgroundColor:pal,borderWidth:0}]},options:{cutout:"60%",plugins:{legend:{position:"right"}}}});
+mk("c3",{type:"bar",data:{labels:["<64","64-127","128-255","256-511","512-1023","1024+"],datasets:[{data:s.sz,backgroundColor:pal[2],borderRadius:6}]},options:{plugins:{legend:{display:false}}}});
+function bar(id,a,c){mk(id,{type:"bar",data:{labels:a.map(function(x){return x[0]}),datasets:[{data:a.map(function(x){return x[1]}),backgroundColor:c,borderRadius:6}]},options:{indexAxis:"y",plugins:{legend:{display:false}}}})}
+bar("c4",s.sr,pal[3]);bar("c5",s.ds,pal[1]);
+$("ra").innerHTML=A.slice(0,5).map(function(a){return'<p><span class="bd '+a.sev+'">'+a.sev+"</span> <b>"+esc(a.cat)+"</b> <span class='muted sm'>"+esc(a.src)+" → "+esc(a.dst)+" · "+esc(a.obs)+"</span></p>"}).join("")||'<p class="muted">No anomalies flagged.</p>'}
+
+var COLS=[["t","Time (s)"],["src","Source"],["dst","Destination"],["sport","Sport"],["dport","Dport"],["proto","Protocol"],["len","Length"],["fl","Flags"],["q","DNS query"]];
+$("ph").innerHTML=COLS.map(function(c){return'<th data-k="'+c[0]+'" tabindex="0">'+c[1]+"</th>"}).join("");
+function fl(f){if(f==null)return"";var n=[[1,"FIN"],[2,"SYN"],[4,"RST"],[8,"PSH"],[16,"ACK"]];return n.filter(function(x){return f&x[0]}).map(function(x){return x[1]}).join(",")}
+function view(){var q=$("q").value.trim().toLowerCase(),pf=$("pf").value,ml=parseInt($("ml").value)||0;
+var r=P.map(function(p,i){return Object.assign({i:i},p)}).filter(function(p){return(!q||(p.src+" "+p.dst+" "+(p.q||"")).toLowerCase().indexOf(q)>-1)&&(!pf||p.proto==pf)&&p.len>=ml});
+r.sort(function(a,b){var x=sortK=="fl"?a.flags:a[sortK=="q"?"q":sortK],y=sortK=="fl"?b.flags:b[sortK=="q"?"q":sortK];x=x==null?-1:x;y=y==null?-1:y;return(x>y?1:x<y?-1:0)*sortD});return r}
+function pk(){if(!P.length){$("pb").innerHTML='<tr><td colspan="9" class="muted">No analysis yet. Upload a capture or create the sample.</td></tr>';$("pi").textContent="";return}
+if($("pf").options.length<2)Object.keys(ST.pr).forEach(function(k){$("pf").insertAdjacentHTML("beforeend","<option>"+esc(k)+"</option>")});
+var r=view(),pg=Math.max(1,Math.ceil(r.length/25));page=Math.min(page,pg-1);var s=r.slice(page*25,page*25+25),t0=P[0].t;
+$("pb").innerHTML=s.length?s.map(function(p){return'<tr class="k" tabindex="0" data-i="'+p.i+'"><td>'+(p.t-t0).toFixed(3)+"</td><td>"+esc(p.src)+"</td><td>"+esc(p.dst)+"</td><td>"+(p.sport==null?"-":p.sport)+"</td><td>"+(p.dport==null?"-":p.dport)+"</td><td>"+p.proto+"</td><td>"+p.len+"</td><td>"+fl(p.flags)+"</td><td>"+esc(p.q||"")+"</td></tr>"}).join(""):'<tr><td colspan="9" class="muted">No packets match these filters.</td></tr>';
+$("pi").textContent=r.length+" packets · page "+(page+1)+" of "+pg;$("pp").disabled=page<=0;$("pn").disabled=page>=pg-1}
+["q","pf","ml"].forEach(function(i){$(i).addEventListener("input",function(){page=0;pk()})});$("pp").onclick=function(){page--;pk()};$("pn").onclick=function(){page++;pk()};
+$("ph").onclick=function(e){var k=e.target.dataset.k;if(k){sortD=sortK==k?-sortD:1;sortK=k;pk()}};
+function modal(h){$("db").innerHTML=h;$("dg").showModal()}$("dx").onclick=function(){$("dg").close()};
+function cp(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(function(){}) }
+$("pb").onclick=function(e){var tr=e.target.closest("tr[data-i]");if(!tr)return;var p=P[+tr.dataset.i];modal("<h2>Packet detail</h2><p class='sm'>Time (UTC): "+new Date(p.t*1000).toISOString()+"<br>Source: "+esc(p.src)+(p.sport!=null?":"+p.sport:"")+"<br>Destination: "+esc(p.dst)+(p.dport!=null?":"+p.dport:"")+"<br>Protocol: "+p.proto+" · Length: "+p.len+" B<br>Flags: "+(fl(p.flags)||"n/a")+"<br>DNS query: "+esc(p.q||"n/a")+'</p><button class="alt sm" id="c1b">Copy source IP</button> <button class="alt sm" id="c2b">Copy destination IP</button>');
+$("c1b").onclick=function(){cp(p.src)};$("c2b").onclick=function(){cp(p.dst)}};
+
+function proto(){var h=P.length?'<div class="tw"><table><thead><tr><th>Protocol</th><th>Packets</th><th>Share</th></tr></thead><tbody>'+Object.keys(ST.pr).sort(function(a,b){return ST.pr[b]-ST.pr[a]}).map(function(k){return"<tr><td>"+k+"</td><td>"+ST.pr[k]+"</td><td>"+(ST.pr[k]/P.length*100).toFixed(1)+"%</td></tr>"}).join("")+"</tbody></table></div>":'<p class="muted">No analysis yet.</p>';$("pt").innerHTML=h}
+function al(){var q=$("aq").value.toLowerCase(),s=$("as").value,r=A.filter(function(a){return(!s||a.sev==s)&&(!q||(a.cat+a.src+a.dst+a.ex).toLowerCase().indexOf(q)>-1)});
+$("ab").innerHTML=r.length?r.map(function(a){return'<tr class="k" tabindex="0" data-id="'+a.id+'"><td>'+a.id+'</td><td><span class="bd '+a.sev+'">'+a.sev+"</span></td><td>"+esc(a.cat)+"</td><td>"+esc(a.src)+" → "+esc(a.dst)+"</td><td>"+esc(a.obs)+"</td><td>"+(a.rev?"reviewed":"new")+"</td></tr>"}).join(""):'<tr><td colspan="6" class="muted">No alerts. Load an analysis or loosen filters.</td></tr>';
+var c={};A.forEach(function(a){c[a.sev]=(c[a.sev]||0)+1});$("ac").textContent=Object.keys(c).map(function(k){return k+": "+c[k]}).join(" · ")}
+$("aq").oninput=al;$("as").onchange=al;
+$("ab").onclick=function(e){var tr=e.target.closest("tr[data-id]");if(!tr)return;var a=A.filter(function(x){return x.id==tr.dataset.id})[0];
+modal("<h2>"+esc(a.cat)+" · "+a.id+'</h2><p><span class="bd '+a.sev+'">'+a.sev+"</span></p><p>"+esc(a.ex)+"</p><p class='sm muted'>Observed: "+esc(a.obs)+"<br>Baseline/threshold: "+esc(a.base)+"<br>Source: "+esc(a.src)+" · Destination: "+esc(a.dst)+"</p><p><b>Next step:</b> "+esc(a.rec)+"</p><p class='sm muted'>A statistical anomaly, not a confirmed incident.</p><button id='rv'>"+(a.rev?"Mark unreviewed":"Mark reviewed")+"</button>");
+$("rv").onclick=function(){a.rev=!a.rev;$("dg").close();al()}};
+
+function rep(){if(!P.length){$("rt").value="No analysis yet.";return}$("rt").value=json()}
+function json(){return JSON.stringify({source:src,synthetic_sample:sample,packets:P.length,bytes:ST.by,protocols:ST.pr,top_sources:ST.sr,top_destinations:ST.ds,alerts:A.map(function(a){return{id:a.id,severity:a.sev,category:a.cat,source:a.src,destination:a.dst,observed:a.obs,baseline:a.base,explanation:a.ex,recommendation:a.rec}}),limitations:"Alerts are statistical anomalies, not confirmed incidents."},null,2)}
+function csv(){var t0=P[0].t;return"rel_time,src,dst,sport,dport,protocol,length,flags,dns_query\n"+P.map(function(p){return[(p.t-t0).toFixed(3),p.src,p.dst,p.sport==null?"":p.sport,p.dport==null?"":p.dport,p.proto,p.len,fl(p.flags),(p.q||"").replace(/^[=+\-@]/,"'$&")].join(",")}).join("\n")}
+function copy(t,b){$("rt").value=t;$("rt").select();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent="Copied ✓"},function(){document.execCommand&&document.execCommand("copy")})}
+$("rj").onclick=function(){if(P.length)copy(json(),$("rj"))};$("rc").onclick=function(){if(P.length)copy(csv(),$("rc"))};
+
+var LB={scan:"Distinct ports / 10 s",syn:"SYN burst / 10 s",sigma:"Rate sensitivity (z)",dnslen:"Long DNS name length",dnsrate:"DNS queries / 10 s"};
+function sett(){$("sf").innerHTML=Object.keys(LB).map(function(k){return'<label>'+LB[k]+'<input type="number" min="1" id="s_'+k+'" value="'+S[k]+'" style="width:130px"></label>'}).join("")}
+$("sa").onclick=function(){Object.keys(LB).forEach(function(k){var v=parseFloat($("s_"+k).value);if(v>0)S[k]=v});if(P.length){detect();location.hash="#alerts";route()}else $("sa").textContent="Saved (load data to apply)"};
+$("th").onclick=function(){var d=document.documentElement,dark=d.dataset.theme?d.dataset.theme=="dark":matchMedia("(prefers-color-scheme: dark)").matches;d.dataset.theme=dark?"light":"dark";route()};
+
+/* ---------- upload ---------- */
+function up(f){$("uerr").innerHTML="";function bad(m){$("uerr").innerHTML='<div class="ban err">'+esc(m)+"</div>"}
+if(!/\.(pcap|cap)$/i.test(f.name))return bad("Unsupported file type. Choose a .pcap file.");if(!f.size)return bad("That file is empty.");if(f.size>20*1048576)return bad("File is larger than 20 MB.");
+var r=new FileReader();r.onerror=function(){bad("Could not read the file.")};r.onload=function(){try{load(parsePcap(r.result),f.name,false)}catch(e){bad(typeof e=="string"?e:"The capture file appears to be corrupt.")}};r.readAsArrayBuffer(f)}
+var dz=$("drop");dz.onclick=function(){$("file").click()};dz.onkeydown=function(e){if(e.key=="Enter"||e.key==" "){e.preventDefault();$("file").click()}};$("file").onchange=function(){this.files[0]&&up(this.files[0])};
+["dragenter","dragover"].forEach(function(v){dz.addEventListener(v,function(e){e.preventDefault();dz.classList.add("d")})});["dragleave","drop"].forEach(function(v){dz.addEventListener(v,function(e){e.preventDefault();dz.classList.remove("d")})});
+dz.addEventListener("drop",function(e){e.dataTransfer.files[0]&&up(e.dataTransfer.files[0])});
+document.querySelectorAll("[data-sample]").forEach(function(b){b.onclick=function(){load(gen(),"Synthetic sample traffic",true)}});
+
+/* ---------- hero animation ---------- */
+(function(){var c=$("cv"),x=c.getContext("2d"),w,h,n=[],still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function z(){w=c.width=c.offsetWidth||600;h=c.height=c.offsetHeight||300;n=[];for(var i=0;i<Math.max(16,w/45);i++)n.push({x:Math.random()*w,y:Math.random()*h,vx:Math.random()-.5,vy:Math.random()-.5})}
+function d(){if(!c.offsetWidth){requestAnimationFrame(d);return}x.clearRect(0,0,w,h);n.forEach(function(a){n.forEach(function(b){var k=Math.hypot(a.x-b.x,a.y-b.y);if(k<130){x.strokeStyle="rgba(34,211,238,"+.25*(1-k/130)+")";x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()}});x.fillStyle="rgba(139,92,246,.85)";x.beginPath();x.arc(a.x,a.y,2.5,0,7);x.fill();if(!still){a.x+=a.vx*.5;a.y+=a.vy*.5;if(a.x<0||a.x>w)a.vx*=-1;if(a.y<0||a.y>h)a.vy*=-1}});if(!still)requestAnimationFrame(d)}
+z();d();addEventListener("resize",z)})();
+route();
+</script>
+</body>
+</html>
